@@ -1,5 +1,7 @@
 # Cagie Pastry & Flower Shop
 
+[![CI](https://github.com/hogie12/cagie-shop/actions/workflows/ci.yml/badge.svg)](https://github.com/hogie12/cagie-shop/actions/workflows/ci.yml)
+
 A learning project: an e-commerce backend split into microservices, with a web frontend.
 
 ## Stack
@@ -120,6 +122,15 @@ Jaeger UI: http://localhost:16686. The `X-Request-Id` the gateway returns is the
 How the trace crosses RabbitMQ: the trace context is saved inside the event envelope when the event enters the outbox, and each consumer continues it.
 Plain `make up` leaves tracing off (no exporter), but logs still share a trace id per request.
 
+## CI (GitHub Actions)
+`.github/workflows/ci.yml` runs on every push and pull request:
+- **Go tests**: all packages against real Postgres and RabbitMQ (`scripts/ci-test-go.sh`, also runnable on a laptop after `make up`).
+- **Web checks**: lint, typecheck, unit tests, production build.
+- **End-to-end**: the whole stack in Docker plus the Playwright tests.
+- **Images** (pushes to `main` only, after all tests pass): `ghcr.io/hogie12/cagie-shop-<service>`, tagged with the commit SHA and `latest`, for linux/amd64.
+
+CI makes its own throwaway `.env` and keys each run (`scripts/ci-env.sh`); no repository secrets are needed.
+
 ## Decisions log
 | # | Decision | Why |
 |---|----------|-----|
@@ -188,6 +199,11 @@ Plain `make up` leaves tracing off (no exporter), but logs still share a trace i
 | 61 | Jaeger is an optional Compose profile, in-memory, 256 MB limit | Useful locally; on a 2 GB VPS it only runs when needed. Traces are lost on restart. |
 | 62 | `log/slog` JSON logs with trace ids | Standard library, machine-readable, and every line links to its trace. |
 | 63 | Images build one at a time (`make build`) | Six parallel Go builds with the OpenTelemetry libraries exhausted Docker's 4 GB. |
+
+| 64 | CI starts Postgres and RabbitMQ from the same Compose file as a laptop, with random throwaway passwords | No credentials in the repo, and CI behaves like local development. |
+| 65 | Images are built in CI and pushed to GHCR; the VPS only pulls | A 2 GB VPS cannot build the Go images. Each image is tagged with its commit SHA, so a deploy can roll back to an exact build. |
+| 66 | Dockerfiles cross-compile and run as numeric user 10001 | Any target CPU builds without emulation; the final image has no RUN step and still never runs as root. |
+| 67 | Action versions pinned exactly, skipping releases under two weeks old | Reproducible runs and a short buffer against a bad release. |
 
 ### Known gaps after stage 9
 - No metrics or dashboards (Prometheus/Grafana) and no alerts, for example on dead-lettered messages.
