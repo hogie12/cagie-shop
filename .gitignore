@@ -1,0 +1,10 @@
+.env
+bin/
+*.log
+.DS_Store
+.keys/
+.claude/
+node_modules/
+.next/
+test-results/
+playwright-report/

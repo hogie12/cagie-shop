@@ -1,0 +1,10 @@
+# Builds use the repo root as context for services that import packages/shared.
+# Keep secrets and bulk out of what is sent to the Docker daemon.
+.git
+.env
+.env.*
+.keys
+**/*_test.go
+apps
+docs
+**/bin

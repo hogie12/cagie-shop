@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* Fonts come from next/font in layout.tsx as CSS variables. */
+@theme inline {
+  --font-sans: var(--font-figtree), system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-hand: var(--font-caveat), cursive;
+}
+
+/* Cagie palette (matches the approved design). */
+@theme {
+  --color-ground: #faf6f0;
+  --color-sand: #f1eadf;
+  --color-line: #e8e1d6;
+  --color-field: #cfc6b8;
+  --color-ink: #2b2622;
+  --color-muted: #6b635b;
+  --color-forest: #1f4d3a;
+  --color-forest-dark: #163828;
+  --color-forest-tint: #e6efe8;
+  --color-mint: #d6e6dc;
+  --color-rose: #b23a5b;
+  --color-rose-dark: #9a2f4c;
+  --color-rose-deep: #7e2440;
+  --color-rose-tint: #f9e6ec;
+  --color-blush: #f4c7d3;
+  --color-butter: #f7ebd3;
+  --color-sun: #fbf1d6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 2px;
+}
