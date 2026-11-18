@@ -43,6 +43,10 @@ type Config struct {
 	AllowedOrigins []string
 	General        *ratelimit.Limiter // every request, per IP
 	Strict         *ratelimit.Limiter // login and register, per IP
+	// TrustedProxies are the reverse proxies (Caddy in production) allowed to
+	// tell the gateway the visitor's real IP via X-Forwarded-For. Empty means
+	// trust nobody: the TCP peer is the client.
+	TrustedProxies []string
 }
 
 type ctxKey int
@@ -52,12 +56,15 @@ const (
 	requestIDKey
 )
 
-func New(cfg Config) *gin.Engine {
+func New(cfg Config) (*gin.Engine, error) {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	// Without trusted proxies, ClientIP is the TCP peer, so a client cannot fake
-	// its IP with X-Forwarded-For to dodge the rate limit.
-	_ = r.SetTrustedProxies(nil)
+	// X-Forwarded-For is believed only when the request comes from a trusted
+	// proxy. Anyone else cannot fake an IP to dodge the rate limit, and behind
+	// Caddy each visitor still gets their own limit instead of sharing Caddy's.
+	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+		return nil, err
+	}
 	// Traces start here: a client's own trace headers are dropped first, so
 	// outsiders cannot join or fake traces inside the shop.
 	r.Use(dropClientTrace(), obs.Middleware("gateway"), requestID(), obs.RequestLog(), gin.Recovery(),
@@ -100,7 +107,7 @@ func New(cfg Config) *gin.Engine {
 	providerAdmin.GET("", paymentProxy)
 	providerAdmin.PUT("", paymentProxy)
 
-	return r
+	return r, nil
 }
 
 func dropClientTrace() gin.HandlerFunc {

@@ -47,7 +47,7 @@ func main() {
 	go general.RunSweeper(ctx)
 	go strict.RunSweeper(ctx)
 
-	h := gateway.New(gateway.Config{
+	h, err := gateway.New(gateway.Config{
 		Verifier:       verifier,
 		AuthURL:        mustURL("AUTH_URL"),
 		CatalogURL:     mustURL("CATALOG_URL"),
@@ -55,9 +55,13 @@ func main() {
 		OrderURL:       mustURL("ORDER_URL"),
 		PaymentURL:     mustURL("PAYMENT_URL"),
 		AllowedOrigins: splitList(os.Getenv("CORS_ALLOWED_ORIGINS")),
+		TrustedProxies: splitList(os.Getenv("TRUSTED_PROXIES")),
 		General:        general,
 		Strict:         strict,
 	})
+	if err != nil {
+		log.Fatalf("gateway config: %v", err)
+	}
 	srv := &http.Server{
 		Addr: ":" + port, Handler: h,
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,

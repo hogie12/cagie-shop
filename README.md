@@ -131,6 +131,9 @@ Plain `make up` leaves tracing off (no exporter), but logs still share a trace i
 
 CI makes its own throwaway `.env` and keys each run (`scripts/ci-env.sh`); no repository secrets are needed.
 
+## Deployment
+Production runs on one VPS with Docker Compose behind Caddy (automatic HTTPS), and the web app on Vercel. Step-by-step guide: [deploy/README.md](deploy/README.md).
+
 ## Decisions log
 | # | Decision | Why |
 |---|----------|-----|
@@ -204,6 +207,11 @@ CI makes its own throwaway `.env` and keys each run (`scripts/ci-env.sh`); no re
 | 65 | Images are built in CI and pushed to GHCR; the VPS only pulls | A 2 GB VPS cannot build the Go images. Each image is tagged with its commit SHA, so a deploy can roll back to an exact build. |
 | 66 | Dockerfiles cross-compile and run as numeric user 10001 | Any target CPU builds without emulation; the final image has no RUN step and still never runs as root. |
 | 67 | Action versions pinned exactly, skipping releases under two weeks old | Reproducible runs and a short buffer against a bad release. |
+
+| 68 | Caddy in front, the only published container, with a fixed IP the gateway trusts for `X-Forwarded-For` | Automatic HTTPS. Each visitor keeps their own rate limit behind the proxy, and nobody else can fake an IP. |
+| 69 | Secrets and JWT keys generated on the server by `deploy/setup.sh` | They never exist in git, CI or a laptop. The private key is readable only by the container user. |
+| 70 | Production images pinned by tag in `deploy/.env` (`latest` or `sha-<commit>`) | One command updates or rolls back to an exact CI build. |
+| 71 | RabbitMQ gets a volume and a fixed hostname in production | Queued messages survive restarts; RabbitMQ keys its data by node name. |
 
 ### Known gaps after stage 9
 - No metrics or dashboards (Prometheus/Grafana) and no alerts, for example on dead-lettered messages.

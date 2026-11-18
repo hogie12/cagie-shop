@@ -90,7 +90,11 @@ func setup(t *testing.T, mutate ...func(*Config)) *env {
 	for _, m := range mutate {
 		m(&cfg)
 	}
-	e.h = New(cfg)
+	h, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.h = h
 	return e
 }
 
@@ -438,5 +442,29 @@ func TestTracesStartAtTheGateway(t *testing.T) {
 	// The request id the customer sees is the trace id the services see.
 	if traceID := strings.Split(got, "-")[1]; w.Header().Get(HeaderRequestID) != traceID {
 		t.Fatalf("request id %q != trace id %q", w.Header().Get(HeaderRequestID), traceID)
+	}
+}
+
+func TestBehindATrustedProxyEachVisitorGetsTheirOwnLimit(t *testing.T) {
+	// Test requests arrive from 203.0.113.7, playing the role of Caddy.
+	e := setup(t, func(c *Config) {
+		c.Strict = ratelimit.New(rate.Every(time.Hour), 2)
+		c.TrustedProxies = []string{"203.0.113.7"}
+	})
+	login := func(visitor string) int {
+		return e.do("POST", "/auth/login", `{}`, map[string]string{"X-Forwarded-For": visitor}).Code
+	}
+	if a, b, c := login("1.1.1.1"), login("1.1.1.1"), login("1.1.1.1"); a != 200 || b != 200 || c != 429 {
+		t.Fatalf("visitor 1: %d %d %d, want 200 200 429", a, b, c)
+	}
+	if got := login("2.2.2.2"); got != 200 {
+		t.Fatalf("visitor 2 must not share visitor 1's limit, got %d", got)
+	}
+}
+
+func TestBadTrustedProxyConfigIsAnError(t *testing.T) {
+	cfg := Config{TrustedProxies: []string{"not-an-ip"}}
+	if _, err := New(cfg); err == nil {
+		t.Fatal("an invalid proxy address must be rejected at startup")
 	}
 }

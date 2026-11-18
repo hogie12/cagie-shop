@@ -1,0 +1,167 @@
+# Production stack for one VPS (2 GB RAM). Images come from GHCR, built by CI.
+# Only Caddy is reachable from the internet (ports 80 and 443).
+# Run with ./deploy.sh, not by hand.
+name: cagie
+
+x-service: &service
+  restart: unless-stopped
+  networks: [internal]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      edge:
+        # Fixed address: the gateway trusts X-Forwarded-For from this IP only.
+        ipv4_address: 172.30.0.10
+    depends_on: [gateway]
+    mem_limit: 64m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  postgres:
+    <<: *service
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    mem_limit: 256m
+
+  rabbitmq:
+    <<: *service
+    image: rabbitmq:4.4-alpine
+    # RabbitMQ stores data under its node name, which comes from the hostname.
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq   # queued messages survive restarts
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    mem_limit: 384m
+
+  catalog:
+    <<: *service
+    image: ghcr.io/hogie12/cagie-shop-catalog:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/catalog?sslmode=disable
+      PORT: "8081"
+    depends_on:
+      postgres: { condition: service_healthy }
+    mem_limit: 64m
+
+  auth:
+    <<: *service
+    image: ghcr.io/hogie12/cagie-shop-auth:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/auth?sslmode=disable
+      PORT: "8082"
+      JWT_PRIVATE_KEY_FILE: /run/keys/jwt_private.pem
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      COOKIE_SECURE: "true"   # HTTPS only
+    volumes:
+      - ./keys/jwt_private.pem:/run/keys/jwt_private.pem:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+    mem_limit: 128m
+
+  inventory:
+    <<: *service
+    image: ghcr.io/hogie12/cagie-shop-inventory:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/inventory?sslmode=disable
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      PORT: "8083"
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    mem_limit: 64m
+
+  order:
+    <<: *service
+    image: ghcr.io/hogie12/cagie-shop-order:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/orders?sslmode=disable
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      PORT: "8084"
+      CATALOG_URL: http://catalog:8081
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      catalog: { condition: service_started }
+    mem_limit: 64m
+
+  payment:
+    <<: *service
+    image: ghcr.io/hogie12/cagie-shop-payment:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/payment?sslmode=disable
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      PORT: "8085"
+      # Admin-only switch for the fake provider. Set to false to hide it.
+      FAKE_PROVIDER_CONTROLS: ${FAKE_PROVIDER_CONTROLS:-true}
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    mem_limit: 64m
+
+  gateway:
+    <<: *service
+    image: ghcr.io/hogie12/cagie-shop-gateway:${IMAGE_TAG:-latest}
+    environment:
+      PORT: "8080"
+      JWT_PUBLIC_KEY_FILE: /run/keys/jwt_public.pem
+      AUTH_URL: http://auth:8082
+      CATALOG_URL: http://catalog:8081
+      INVENTORY_URL: http://inventory:8083
+      ORDER_URL: http://order:8084
+      PAYMENT_URL: http://payment:8085
+      CORS_ALLOWED_ORIGINS: https://${SHOP_DOMAIN}
+      TRUSTED_PROXIES: 172.30.0.10   # Caddy
+    volumes:
+      - ./keys/jwt_public.pem:/run/keys/jwt_public.pem:ro
+    networks: [internal, edge]
+    depends_on: [auth, catalog, inventory, order, payment]
+    mem_limit: 64m
+
+networks:
+  internal: {}   # services, Postgres, RabbitMQ: never exposed
+  edge:          # Caddy and the gateway only
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  pgdata:
+  rabbitdata:
+  caddy_data:     # HTTPS certificates; keep this volume
+  caddy_config:
