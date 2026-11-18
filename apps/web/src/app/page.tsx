@@ -2,6 +2,7 @@ import { GiftPairing } from "@/components/home/GiftPairing";
 import { Hero } from "@/components/home/Hero";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { StorySection } from "@/components/home/StorySection";
+import { Team } from "@/components/home/Team";
 import { Visit } from "@/components/home/Visit";
 import { Illustration } from "@/components/Illustration";
 import { ProductGrid } from "@/components/ProductGrid";
@@ -57,6 +58,7 @@ export default async function Home() {
         />
       </div>
 
+      <Team />
       {giftFlower && giftPastry && <GiftPairing flower={giftFlower} pastry={giftPastry} />}
       <Visit />
     </main>

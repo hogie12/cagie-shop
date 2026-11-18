@@ -17,3 +17,5 @@ the shop's own photos when available.
 | store/bakery-counter.webp | Declan Sun | https://unsplash.com/photos/EjNlELxM98k |
 | store/flower-buckets.webp | Alisa Anton | https://unsplash.com/photos/D4Blldtly00 |
 | store/florist-at-work.webp | Ellicia | https://unsplash.com/photos/24HcJhf0u6M |
+
+The photos in `team/` are of the shop's own baker and florist, shared by them for this site.
