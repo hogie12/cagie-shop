@@ -48,10 +48,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} className="flex w-full max-w-[380px] flex-col gap-5" noValidate>
-      <div>
-        <p className="font-hand text-[26px] text-rose">{mode === "signIn" ? "welcome back" : "nice to meet you"}</p>
-        <h2 className="font-serif text-[34px] font-bold">{mode === "signIn" ? "Sign in" : "Create account"}</h2>
-      </div>
+      <h2 className="font-serif text-[34px] font-bold">{mode === "signIn" ? "Sign in" : "Create account"}</h2>
 
       <LayoutGroup id="auth-mode">
         <div role="group" aria-label="Choose" className="grid grid-cols-2 rounded-full bg-sand p-1">

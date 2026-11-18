@@ -6,7 +6,6 @@ import type { ProductWithStock } from "@/lib/types";
 
 type Props = {
   id?: string;
-  kicker: string;
   title: string;
   emphasis: string;
   text: string;
@@ -16,15 +15,14 @@ type Props = {
   reversed?: boolean;
 };
 
-export function StorySection({ id, kicker, title, emphasis, text, image, products, reversed }: Props) {
-  const headingId = `${kicker.replace(/\s+/g, "-")}-title`;
+export function StorySection({ id, title, emphasis, text, image, products, reversed }: Props) {
+  const headingId = `${emphasis.toLowerCase().replace(/[^a-z]+/g, "-")}-title`;
   return (
     <section id={id} aria-labelledby={headingId} className={`mx-auto flex max-w-[1180px] flex-wrap items-center gap-10 px-6 py-12 ${reversed ? "flex-row-reverse" : ""}`}>
       <Reveal className="min-w-0 flex-[1_1_440px]">
         <Image src={image.src} alt={image.alt} width={1400} height={1000} sizes="(max-width: 1000px) 100vw, 560px" className="aspect-[7/5] w-full rounded-[28px] object-cover" />
       </Reveal>
       <Reveal delay={0.1} className="min-w-0 flex-[1_1_440px]">
-        <p className="font-hand text-[26px] text-rose">{kicker}</p>
         <h2 id={headingId} className="font-serif text-[40px] font-bold leading-[1.1]">
           {title} <em className="font-semibold">{emphasis}</em>
         </h2>

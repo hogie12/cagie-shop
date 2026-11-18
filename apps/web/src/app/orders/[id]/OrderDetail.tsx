@@ -88,7 +88,7 @@ export function OrderDetail() {
         </p>
         {view.live && (
           <span className="inline-flex items-center gap-2 rounded-full bg-forest-tint px-3 py-1.5 text-[13px] font-semibold text-forest">
-            <motion.span aria-hidden="true" className="h-2 w-2 rounded-full bg-forest" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.4, repeat: Infinity }} />
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-forest" />
             Updating automatically
           </span>
         )}
@@ -105,7 +105,7 @@ export function OrderDetail() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ type: "spring", stiffness: 200, damping: 16 }}
             >
-              <Illustration kind={art[0]} size={96} decorative sway={view.confirmed} />
+              <Illustration kind={art[0]} size={96} decorative />
               <Illustration kind={art[1]} size={80} decorative />
             </motion.div>
           </AnimatePresence>
@@ -115,8 +115,8 @@ export function OrderDetail() {
         <div aria-live="polite" className="sm:pr-48">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={order.status} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
-              {view.confirmed && <p className="font-hand text-3xl text-rose">thank you</p>}
               <h1 className="font-serif text-[44px] font-bold tracking-[-0.01em]">{view.headline}</h1>
+              {view.confirmed && <p className="font-hand text-3xl text-rose">thank you</p>}
               <p className="mt-1.5 text-base text-muted">{view.subline}</p>
             </motion.div>
           </AnimatePresence>

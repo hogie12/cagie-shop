@@ -6,8 +6,8 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { rupiah, stockLabel } from "@/lib/format";
 import { illustrationFor } from "@/lib/illustrations";
 import type { Category, ProductWithStock } from "@/lib/types";
-import { AddToCartButton } from "./AddToCartButton";
 import { Illustration } from "./Illustration";
+import { QuantityControl } from "./QuantityControl";
 
 type Filter = "all" | Category;
 
@@ -34,7 +34,6 @@ export function ProductGrid({ products }: { products: ProductWithStock[] }) {
     <>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-hand text-[26px] text-rose">in the shop today</p>
           <h2 id="products-title" className="font-serif text-[40px] font-bold leading-tight">
             Shop the case
           </h2>
@@ -67,7 +66,6 @@ export function ProductGrid({ products }: { products: ProductWithStock[] }) {
         <AnimatePresence mode="popLayout">
           {shown.map((p, i) => {
             const kind = illustrationFor(p.name, p.category);
-            const soldOut = p.stock !== null && p.stock <= 0;
             return (
               <motion.li
                 key={p.id}
@@ -76,7 +74,6 @@ export function ProductGrid({ products }: { products: ProductWithStock[] }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.18 } }}
                 transition={{ duration: 0.45, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -4 }}
                 className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-white"
               >
                 <div className={`relative aspect-[4/3] overflow-hidden ${tint[kind]}`}>
@@ -106,13 +103,12 @@ export function ProductGrid({ products }: { products: ProductWithStock[] }) {
                   </div>
                   <h3 className="mt-1 font-serif text-[23px] font-bold">{p.name}</h3>
                   <p className="grow text-sm text-muted">{p.description}</p>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-lg font-bold tabular-nums">{rupiah(p.priceIdr)}</span>
-                    <AddToCartButton
-                      disabled={soldOut || p.stock === null}
-                      item={{ productId: p.id, name: p.name, category: p.category, priceIdr: p.priceIdr, imageUrl: p.imageUrl }}
-                    />
-                  </div>
+                  <span className="mt-2 whitespace-nowrap text-lg font-bold tabular-nums">{rupiah(p.priceIdr)}</span>
+                  <QuantityControl
+                    className="mt-1 w-full"
+                    stock={p.stock}
+                    item={{ productId: p.id, name: p.name, category: p.category, priceIdr: p.priceIdr, imageUrl: p.imageUrl }}
+                  />
                 </div>
               </motion.li>
             );

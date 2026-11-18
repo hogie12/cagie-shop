@@ -23,8 +23,10 @@ export function HowItWorks() {
               <Reveal delay={i * 0.1} className="flex h-full items-start gap-4 rounded-[22px] bg-white p-5">
                 <Illustration kind={s.kind} size={64} decorative />
                 <div>
-                  <p className="font-hand text-2xl text-rose">{s.word}</p>
-                  <h3 className="text-lg font-bold">{s.title}</h3>
+                  <h3 className="text-lg font-bold">
+                    <span className="mr-1.5 font-hand text-2xl font-normal text-rose">{s.word}</span>
+                    {s.title}
+                  </h3>
                   <p className="mt-1 text-sm text-muted">{s.text}</p>
                 </div>
               </Reveal>

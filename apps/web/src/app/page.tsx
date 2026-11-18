@@ -41,7 +41,6 @@ export default async function Home() {
 
       <div id="story">
         <StorySection
-          kicker="from our oven"
           title="A small case,"
           emphasis="baked every morning"
           text="Cagie keeps the pastry case short on purpose: a few things, made well and baked fresh each day. When today's batch is gone, it is gone."
@@ -49,7 +48,6 @@ export default async function Home() {
           products={pastries}
         />
         <StorySection
-          kicker="from the flower room"
           title="Flowers,"
           emphasis="arranged to order"
           text="Every bouquet is put together when you order it, wrapped in kraft paper or set in a glass vase, ready to give or to keep."

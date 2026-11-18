@@ -53,12 +53,11 @@ export default function CartPage() {
         </svg>
         Keep shopping
       </Link>
-      <p className="mt-2 font-hand text-[26px] text-rose">almost yours</p>
-      <h1 className="mb-7 font-serif text-[44px] font-bold tracking-[-0.01em]">Your cart</h1>
+      <h1 className="mb-7 mt-2 font-serif text-[44px] font-bold tracking-[-0.01em]">Your cart</h1>
 
       {lines.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-line bg-white p-12 text-center">
-          <Illustration kind="croissant" size={96} decorative sway />
+          <Illustration kind="croissant" size={96} decorative />
           <h2 className="font-serif text-2xl font-bold">Your cart is empty</h2>
           <p className="text-muted">Pick a pastry or a bouquet to get started.</p>
           <Link href="/#products" className="mt-2 inline-flex min-h-11 items-center rounded-full bg-forest px-5 font-semibold text-white">

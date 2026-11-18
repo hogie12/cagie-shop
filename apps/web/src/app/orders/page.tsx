@@ -22,7 +22,6 @@ export default function OrdersPage() {
 
   return (
     <main className="mx-auto w-full max-w-[880px] px-6 pb-16 pt-8">
-      <p className="font-hand text-[26px] text-rose">your history</p>
       <h1 className="mb-7 font-serif text-[44px] font-bold">My orders</h1>
 
       {status === "signedOut" && <SignInPrompt next="/orders" text="Sign in to see your orders." />}
@@ -30,7 +29,7 @@ export default function OrdersPage() {
       {status !== "signedOut" && !error && orders === null && <p className="text-muted">Loading your orders…</p>}
       {orders?.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-line bg-white p-12 text-center">
-          <Illustration kind="sunflower" size={88} decorative sway />
+          <Illustration kind="sunflower" size={88} decorative />
           <p className="text-muted">No orders yet.</p>
           <Link href="/#products" className="inline-flex min-h-11 items-center rounded-full bg-forest px-5 font-semibold text-white">
             Browse the shop

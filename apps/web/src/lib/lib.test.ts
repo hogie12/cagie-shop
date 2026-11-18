@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addLine, cartTotals, MAX_LINES, MAX_QUANTITY, setLineQuantity, type CartLine } from "./cart";
-import { rupiah, stockLabel } from "./format";
+import { digitsOnly, groupThousands, rupiah, stockLabel } from "./format";
 import { illustrationFor } from "./illustrations";
 import { decodeClaims } from "./jwt";
 import { describeOrder, friendlyReason } from "./orderStatus";
@@ -15,6 +15,24 @@ describe("rupiah", () => {
     expect(rupiah(1250000)).toBe("Rp 1.250.000");
     expect(rupiah(0)).toBe("Rp 0");
     expect(rupiah(999)).toBe("Rp 999");
+  });
+});
+
+describe("money input helpers", () => {
+  it("groups digits in thousands with dots", () => {
+    expect(groupThousands("28000")).toBe("28.000");
+    expect(groupThousands("350000")).toBe("350.000");
+    expect(groupThousands("1250000")).toBe("1.250.000");
+    expect(groupThousands("999")).toBe("999");
+    expect(groupThousands("")).toBe("");
+  });
+
+  it("keeps only digits and drops leading zeros", () => {
+    expect(digitsOnly("Rp 28.000")).toBe("28000");
+    expect(digitsOnly("0045000")).toBe("45000");
+    expect(digitsOnly("12a3")).toBe("123");
+    expect(digitsOnly("0")).toBe("0");
+    expect(digitsOnly("")).toBe("");
   });
 });
 

@@ -17,10 +17,10 @@ export default function LoginPage() {
         </div>
         <div className="relative mt-auto h-[220px] rounded-3xl bg-butter" aria-hidden="true">
           <div className="absolute -bottom-1.5 left-3">
-            <Illustration kind="lily" size={150} decorative sway />
+            <Illustration kind="lily" size={150} decorative />
           </div>
           <div className="absolute left-[150px] top-3.5">
-            <Illustration kind="sunflower" size={140} decorative sway />
+            <Illustration kind="sunflower" size={140} decorative />
           </div>
           <div className="absolute bottom-2.5 right-6">
             <Illustration kind="tart" size={140} decorative />

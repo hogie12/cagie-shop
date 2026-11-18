@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { LayoutGroup, motion } from "motion/react";
+import { MoneyInput } from "@/components/MoneyInput";
 import { ProductThumb } from "@/components/ProductThumb";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { ApiError, request } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { rupiah } from "@/lib/format";
+import { digitsOnly } from "@/lib/format";
 import type { Category, Product, ProductWithStock, ProviderMode } from "@/lib/types";
 
 const modes: { id: ProviderMode; label: string; note: string; active: string }[] = [
@@ -40,6 +41,14 @@ export default function AdminPage() {
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [confirmRemove, setConfirmRemove] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [saving, setSaving] = useState<number | null>(null);
+  const [saved, setSaved] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (saved === null) return;
+    const t = setTimeout(() => setSaved(null), 2500);
+    return () => clearTimeout(t);
+  }, [saved]);
 
   const show = useCallback((withStock: ProductWithStock[]) => {
     setRows(withStock);
@@ -69,12 +78,14 @@ export default function AdminPage() {
 
   const save = async (p: ProductWithStock) => {
     const d = drafts[p.id];
-    const price = Number(d.priceIdr);
-    const stock = Number(d.stock);
-    if (!Number.isInteger(price) || price < 0 || d.stock === "" || !Number.isInteger(stock) || stock < 0) {
-      setNotice(`Check ${p.name}: price and stock must be whole numbers, 0 or more.`);
+    if (d.priceIdr === "" || d.stock === "") {
+      setNotice(`Fill in both price and stock for ${p.name}.`);
       return;
     }
+    const price = Number(d.priceIdr);
+    const stock = Number(d.stock);
+    setSaving(p.id);
+    setNotice(null);
     try {
       if (price !== p.priceIdr) {
         await authRequest(`/products/${p.id}`, {
@@ -83,10 +94,13 @@ export default function AdminPage() {
         });
       }
       if (stock !== p.stock) await authRequest(`/inventory/${p.id}`, { method: "PUT", body: { quantity: stock } });
+      setSaved(p.id);
       setNotice(`${p.name} saved. The shop page shows it within about a minute.`);
       await load();
     } catch {
       setNotice(`${p.name} could not be saved. Try again.`);
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -119,7 +133,6 @@ export default function AdminPage() {
   return (
     <main className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-6 pb-16 pt-8">
       <div>
-        <p className="font-hand text-[26px] text-rose">behind the counter</p>
         <h1 className="font-serif text-[44px] font-bold tracking-[-0.01em]">Shop admin</h1>
       </div>
 
@@ -170,7 +183,7 @@ export default function AdminPage() {
               <tr className="text-left text-xs uppercase tracking-wider text-muted">
                 <th scope="col" className="px-6 py-3 font-semibold">Product</th>
                 <th scope="col" className="px-3 py-3 font-semibold">Category</th>
-                <th scope="col" className="px-3 py-3 font-semibold">Price (Rp)</th>
+                <th scope="col" className="px-3 py-3 font-semibold">Price</th>
                 <th scope="col" className="px-3 py-3 font-semibold">Stock</th>
                 <th scope="col" className="px-6 py-3 text-right font-semibold">Actions</th>
               </tr>
@@ -184,6 +197,7 @@ export default function AdminPage() {
               {rows?.map((p) => {
                 const d = drafts[p.id] ?? { priceIdr: "", stock: "" };
                 const low = p.stock !== null && p.stock <= 5;
+                const dirty = d.priceIdr !== String(p.priceIdr) || d.stock !== (p.stock === null ? "" : String(p.stock));
                 return (
                   <tr key={p.id} className="border-t border-line">
                     <td className="px-6 py-2.5">
@@ -198,12 +212,10 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-3 py-2.5">
-                      <input
-                        inputMode="numeric"
+                      <MoneyInput
                         aria-label={`Price of ${p.name} in rupiah`}
                         value={d.priceIdr}
-                        onChange={(e) => setDrafts({ ...drafts, [p.id]: { ...d, priceIdr: e.target.value } })}
-                        className="min-h-10 w-[120px] rounded-[10px] border border-field px-2.5 tabular-nums"
+                        onChange={(v) => setDrafts({ ...drafts, [p.id]: { ...d, priceIdr: v } })}
                       />
                     </td>
                     <td className="px-3 py-2.5">
@@ -213,7 +225,8 @@ export default function AdminPage() {
                           aria-label={`Stock of ${p.name}`}
                           value={d.stock}
                           placeholder="0"
-                          onChange={(e) => setDrafts({ ...drafts, [p.id]: { ...d, stock: e.target.value } })}
+                          maxLength={6}
+                          onChange={(e) => setDrafts({ ...drafts, [p.id]: { ...d, stock: digitsOnly(e.target.value) } })}
                           className="min-h-10 w-20 rounded-[10px] border border-field px-2.5 tabular-nums"
                         />
                         {low && <span className="font-hand text-xl text-rose-dark">running low</span>}
@@ -228,7 +241,14 @@ export default function AdminPage() {
                         </>
                       ) : (
                         <>
-                          <button type="button" onClick={() => void save(p)} className="min-h-10 cursor-pointer px-3 font-semibold text-forest">Save</button>
+                          <button
+                            type="button"
+                            onClick={() => void save(p)}
+                            disabled={!dirty || saving === p.id}
+                            className="min-h-10 min-w-[84px] px-3 font-semibold text-forest disabled:text-muted"
+                          >
+                            {saving === p.id ? "Saving…" : saved === p.id && !dirty ? "Saved" : "Save"}
+                          </button>
                           <button type="button" onClick={() => setConfirmRemove(p.id)} className="min-h-10 cursor-pointer px-3 font-semibold text-rose-dark">Remove</button>
                         </>
                       )}
@@ -258,12 +278,12 @@ function AddProduct({ onAdded, authRequest }: { onAdded: (name: string) => Promi
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const price = Number(form.priceIdr);
-    const stock = Number(form.stock || "0");
-    if (!form.name.trim() || !Number.isInteger(price) || price < 0 || !Number.isInteger(stock) || stock < 0) {
-      setError("Give a name, a whole-number price and stock (0 or more).");
+    if (!form.name.trim() || form.priceIdr === "") {
+      setError("Give the product a name and a price.");
       return;
     }
+    const price = Number(form.priceIdr);
+    const stock = Number(form.stock || "0");
     setBusy(true);
     setError(null);
     try {
@@ -302,13 +322,20 @@ function AddProduct({ onAdded, authRequest }: { onAdded: (name: string) => Promi
         Description
         <input className={field} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={1000} />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Price (Rp)
-        <input className={`${field} w-[120px]`} inputMode="numeric" value={form.priceIdr} onChange={(e) => setForm({ ...form, priceIdr: e.target.value })} />
-      </label>
+      <div className="flex flex-col gap-1 text-sm">
+        <label htmlFor="new-price">Price</label>
+        <MoneyInput id="new-price" value={form.priceIdr} onChange={(v) => setForm({ ...form, priceIdr: v })} />
+      </div>
       <label className="flex flex-col gap-1 text-sm">
         Stock
-        <input className={`${field} w-20`} inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+        <input
+          className={`${field} w-20 tabular-nums`}
+          inputMode="numeric"
+          maxLength={6}
+          placeholder="0"
+          value={form.stock}
+          onChange={(e) => setForm({ ...form, stock: digitsOnly(e.target.value) })}
+        />
       </label>
       <button type="submit" disabled={busy} className="min-h-11 cursor-pointer rounded-full bg-forest px-5 font-semibold text-white disabled:opacity-70">
         {busy ? "Adding…" : "Add product"}
@@ -318,7 +345,6 @@ function AddProduct({ onAdded, authRequest }: { onAdded: (name: string) => Promi
           {error}
         </p>
       )}
-      <p className="w-full text-xs text-muted">Example price: {rupiah(45000)} is entered as 45000.</p>
     </form>
   );
 }

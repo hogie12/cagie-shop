@@ -43,7 +43,51 @@ body {
   color: var(--color-ink);
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-forest);
-  outline-offset: 2px;
+/* In the base layer so a component (like MoneyInput) can replace it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+  }
+}
+
+/* Jump links (#products, #story) land below the sticky header, not under it.
+   The header is taller on phones, where its links sit on a second row. */
+[id] {
+  scroll-margin-top: 7.5rem;
+}
+
+@media (min-width: 768px) {
+  [id] {
+    scroll-margin-top: 5.5rem;
+  }
+}
+
+/* Browser surfaces in Cagie's colours. */
+::selection {
+  background: var(--color-forest);
+  color: #fff;
+}
+
+input,
+textarea,
+select {
+  caret-color: var(--color-rose);
+  accent-color: var(--color-forest);
+}
+
+/* Every enabled control shows the pointer; disabled ones say so. */
+@layer base {
+  a[href],
+  button:not(:disabled),
+  summary,
+  select,
+  label[for],
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
 }

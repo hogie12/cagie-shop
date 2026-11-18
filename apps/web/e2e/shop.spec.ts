@@ -22,6 +22,7 @@ test.describe("shop", () => {
     await addToCart(page, "Butter Croissant");
     await addToCart(page, "Butter Croissant");
     await addToCart(page, "Sunflower Bunch");
+    await expect(page.getByRole("group", { name: "Butter Croissant in your cart" })).toContainText("2 in cart");
     await expect(page.getByRole("link", { name: /Cart/ })).toContainText("3");
 
     await signIn(page); // lands on /cart

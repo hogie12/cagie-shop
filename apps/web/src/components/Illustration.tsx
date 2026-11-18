@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "motion/react";
 import type { IllustrationKind } from "@/lib/illustrations";
 
 const ink = "#3A2A20";
@@ -139,25 +136,21 @@ type Props = {
   size?: number;
   /** Decorative drawings are hidden from screen readers. */
   decorative?: boolean;
-  /** A slow, gentle sway (turned off for people who prefer reduced motion). */
-  sway?: boolean;
   className?: string;
 };
 
-export function Illustration({ kind, size = 120, decorative = false, sway = false, className }: Props) {
+export function Illustration({ kind, size = 120, decorative = false, className }: Props) {
   const a11y = decorative ? { "aria-hidden": true } : { role: "img", "aria-label": labels[kind] };
   return (
-    <motion.svg
+    <svg
       viewBox="0 0 120 120"
       width={size}
       height={size}
       className={className}
-      style={{ transformOrigin: "50% 90%", flexShrink: 0 }}
-      animate={sway ? { rotate: [-3, 3, -3] } : undefined}
-      transition={sway ? { duration: 6, repeat: Infinity, ease: "easeInOut" } : undefined}
+      style={{ flexShrink: 0 }}
       {...a11y}
     >
       {drawings[kind]}
-    </motion.svg>
+    </svg>
   );
 }

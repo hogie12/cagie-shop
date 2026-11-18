@@ -38,7 +38,7 @@ export function OrderTracker({ steps }: { steps: OrderView["steps"] }) {
                     aria-hidden="true"
                     className="h-2.5 w-2.5 rounded-full bg-forest"
                     animate={{ scale: [1, 1.5, 1], opacity: [1, 0.55, 1] }}
-                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{ duration: 1.2, repeat: 2, ease: "easeInOut" }}
                   />
                 )}
               </AnimatePresence>

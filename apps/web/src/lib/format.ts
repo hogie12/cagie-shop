@@ -1,6 +1,16 @@
+/** Dot thousands separators, Indonesian style: "28000" -> "28.000". */
+export function groupThousands(digits: string): string {
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/** Keeps only digits and drops leading zeros: "Rp 028.000" -> "28000". */
+export function digitsOnly(text: string): string {
+  return text.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+}
+
 /** Indonesian rupiah with dot thousands separators: 28000 -> "Rp 28.000". */
 export function rupiah(amount: number): string {
-  return "Rp " + Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return "Rp " + groupThousands(Math.round(amount).toString());
 }
 
 export function stockLabel(stock: number | null): string {

@@ -56,6 +56,10 @@ export async function signIn(page: Page) {
 
 export async function addToCart(page: Page, productName: string) {
   const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: productName }) });
-  await card.getByRole("button", { name: /Add to cart/ }).click();
-  await expect(card.getByRole("button", { name: /Added/ })).toBeVisible();
+  const stepper = card.getByRole("group", { name: `${productName} in your cart` });
+  // Check the stepper first: it appears at once, while the old "Add to cart"
+  // button stays in the page for a moment as it fades out.
+  if (await stepper.isVisible()) await stepper.getByRole("button", { name: `One more ${productName}` }).click();
+  else await card.getByRole("button", { name: "Add to cart" }).click();
+  await expect(stepper).toBeVisible();
 }

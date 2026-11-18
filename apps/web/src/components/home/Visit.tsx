@@ -7,7 +7,6 @@ export function Visit() {
     <section id="visit" aria-labelledby="visit-title" className="bg-sand">
       <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-10 px-6 py-14">
         <Reveal className="min-w-0 flex-[1_1_420px]">
-          <p className="font-hand text-[26px] text-rose">come say hello</p>
           <h2 id="visit-title" className="font-serif text-[40px] font-bold">
             Visit the shop
           </h2>
